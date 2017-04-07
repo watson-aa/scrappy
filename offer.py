@@ -1,14 +1,14 @@
 import requests
 import time
 import json
-import hashlib
+import getpass
 from lxml import html
 
 count = 0
 session = requests.session()
 print "Coupons Loader beta"
 username = raw_input('Enter your username: ')
-pwd = raw_input('Enter your password: ')
+pwd = getpass.getpass('Enter your password: ')
 
 """
 def computeMD5hash(string):
