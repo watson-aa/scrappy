@@ -1,67 +1,50 @@
 import requests
 import time
 import json
+import hashlib
 from lxml import html
 
+count = 0
 session = requests.session()
+print "Coupons Loader beta"
+username = raw_input('Enter your username: ')
+pwd = raw_input('Enter your password: ')
 
-# get login POST url
-login_get = session.get('https://www.stopandshop.com/login/')
-tree = html.fromstring(login_get.content)
-login_url = tree.xpath('//form[@class="login-standalone"]/@action')[0]
-print login_url
-
-# expect to get an invalid token
-session.get('https://stopandshop.com/auth/api/public/atg/properties?_=' + str(int(time.time()) * 1000))
+"""
+def computeMD5hash(string):
+    m = hashlib.md5()
+    m.update(string.encode('utf-8'))
+    return m.hexdigest()
+"""
 
 token_auth = 'MDJjMWM0YTctMmI5MC00NjZjLThlMjEtMWFiMTdjZDg4YmU4OjAzMGU3ZGU4YTA2YzY2YWM2ZTYwYTE1NDBjMDUwMWE0ZmQxNzI4ZTU0ZDU0MGJhNjIyOTM3NTIxZTVhNDQ5NjA='
-token_post = session.post('https://stopandshop.com/auth/oauth/token', { 'grant_type': 'client_credentials', 'scope': 'profile' }, headers = { 'Authorization': 'Basic ' + token_auth})
+token_post = session.post('https://stopandshop.com/auth/oauth/token', { 'grant_type': 'password', 'username': username,'password': pwd,'client_id':'02c1c4a7-2b90-466c-8e21-1ab17cd88be8' }, headers = { 'Authorization': 'Basic ' + token_auth})
 
 access_token = json.loads(token_post.text)['access_token']
-auth_header = { 'Authorization': 'Bearer ' + access_token }
+auth_header = { 'Authorization': 'Bearer ' + access_token, 'Content-Type':'application/json' }
 
-print access_token
-auth_cookie = {
-	'OAUTH_access_token': access_token
-}
+print "User Access Token " +access_token
 
-# expect to get BCC data
-prop_get = session.get('https://stopandshop.com/auth/api/public/atg/properties?_=' + str(int(time.time()) * 1000), headers=auth_header, cookies=auth_cookie)
-#print prop_get.content
 
-#login_get = session.get('https://www.stopandshop.com/login/', headers=auth_header, cookies=auth_cookie)
-#print login_get.headers
+# get user profile for fetching card number  for loading coupon.
+profile_url = 'https://stopandshop.com/auth/profile/SNS'
+profile_get = session.get(profile_url, headers= auth_header)
+user_card_number =  json.loads(profile_get.text)['cardNumber']
 
-payload = {
-			'username': 'aaron.watson@ahold.com',
-		 	'password': 'not_my_password',
-			'/atg/userprofiling/ProfileFormHandler.loginSuccessURL': 'https://stopandshop.com?cmPageId=login&cmLocation=standalone',
-			'/atg/userprofiling/ProfileFormHandler.loginErrorURL': '/login/',
-			'/atg/userprofiling/ProfileFormHandler.login': 'log in'
-		  }
-'''
-login_header = {
-	'Host': 'stopandshop.com',
-	'Connection': 'keep-alive',
-	'Pragma': 'no-cache',
-	'Cache-Control': 'no-cache',
-	'Referer': 'https://stopandshop.com/login/',
-	'Origin': 'https://stopandshop.com',
-	'Upgrade-Insecure-Requests': 1,
-	'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
-	'Content-Type': 'application/x-www-form-urlencoded',
-	'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-	'Accept-Encoding': 'gzip, deflate, br',
-	'Accept-Language': 'en-US,en;q=0.8'
-}
-'''
-login_post = session.post(login_url, payload, cookies=auth_cookie)
-#print login_post.request.headers
-print login_post.status_code
-print login_post.content
+#Fetch all coupons for user
+offers = session.get('https://stopandshop.com/auth/api/private/synergy/coupons/offers/'+user_card_number +'?&numRecords=1000', headers=auth_header)
+#print offers.text
+offers_master_list = json.loads(offers.text)['offers']
+print "Coupons Available: " + str(len(offers_master_list))
 
-'''
-response = session_requests.post('https://stopandshop.com/login.jsp?DARGS=/WEB-INF/jsp/common/blocks/form/login-form-standalone-block.jsp.loginBlock' + rando_login, data=form)
-offers = session_requests.get('https://stopandshop.com/dashboard/coupons-deals/', cookies=response.cookies)
-print offers.url
-'''
+def load_offer(offer_id):
+	put_offers = session.put('https://stopandshop.com/auth/api/private/synergy/coupons/offers/' +user_card_number,headers=auth_header,json={"offerNumber": offer_id})
+	print put_offers.url
+
+for offer in offers_master_list:
+	print offer['title'] + ' ' + offer['description']
+	load_offer(offer['id'])
+	count += 1
+	if((count % 10) == 0):
+		print 'Sleeping for 2 seconds'
+		time.sleep(2)
