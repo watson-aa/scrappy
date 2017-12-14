@@ -33,17 +33,17 @@ print "User Access Token " +access_token
 
 # get user profile for fetching card number  for loading coupon.
 profile_url = base_url + 'auth/profile/SNS'
-profile_get = session.get(profile_url, headers= auth_header)
+profile_get = session.get(profile_url, headers= auth_header, verify=False)
 user_card_number =  json.loads(profile_get.text)['cardNumber']
 
 #Fetch all coupons for user
-offers = session.get(base_url + 'auth/api/private/synergy/coupons/offers/'+user_card_number +'?&numRecords=1000', headers=auth_header)
+offers = session.get(base_url + 'auth/api/private/synergy/coupons/offers/'+user_card_number +'?&numRecords=1000', headers=auth_header, verify=False)
 #print offers.text
 offers_master_list = json.loads(offers.text)['offers']
 print "Coupons Available: " + str(len(offers_master_list))
 
 def load_offer(offer_id):
-	put_offers = session.put(base_url + 'auth/api/private/synergy/coupons/offers/' +user_card_number,headers=auth_header,json={"offerNumber": offer_id})
+	put_offers = session.put(base_url + 'auth/api/private/synergy/coupons/offers/' +user_card_number,headers=auth_header,json={"offerNumber": offer_id}, verify=False)
 	print put_offers.url
 
 for offer in offers_master_list:
