@@ -23,7 +23,7 @@ def computeMD5hash(string):
 """
 
 token_auth = 'MDJjMWM0YTctMmI5MC00NjZjLThlMjEtMWFiMTdjZDg4YmU4OjAzMGU3ZGU4YTA2YzY2YWM2ZTYwYTE1NDBjMDUwMWE0ZmQxNzI4ZTU0ZDU0MGJhNjIyOTM3NTIxZTVhNDQ5NjA='
-token_post = session.post(base_url + 'auth/oauth/token', { 'grant_type': 'password', 'username': username,'password': pwd,'client_id':'02c1c4a7-2b90-466c-8e21-1ab17cd88be8' }, headers = { 'Authorization': 'Basic ' + token_auth})
+token_post = session.post(base_url + 'auth/oauth/token', { 'grant_type': 'password', 'username': username,'password': pwd,'client_id':'02c1c4a7-2b90-466c-8e21-1ab17cd88be8' }, headers = { 'Authorization': 'Basic ' + token_auth}, verify=False)
 
 access_token = json.loads(token_post.text)['access_token']
 auth_header = { 'Authorization': 'Bearer ' + access_token, 'Content-Type':'application/json' }
